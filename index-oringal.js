@@ -213,9 +213,12 @@ async function downloadFilesAndRun() {
   authorizeFiles(filesToAuthorize);
 
   // 运行xr-ay
-  const command1 = `nohup ${webPath} -c ${FILE_PATH}/config.json >/dev/null 2>&1 &`;
   try {
-    await exec(command1);
+    const xrayProcess = require('child_process').spawn(webPath, ['-c', `${FILE_PATH}/config.json`], {
+      stdio: 'inherit',
+      detached: true
+    });
+    xrayProcess.unref();
     console.log(`${webName} is running`);
     await new Promise((resolve) => setTimeout(resolve, 1000));
   } catch (error) {
@@ -224,18 +227,22 @@ async function downloadFilesAndRun() {
 
   // 运行cloud-fared
   if (fs.existsSync(botPath)) {
-    let args;
+    let argsArray;
 
     if (ARGO_AUTH.match(/^[A-Z0-9a-z=_-]{120,250}$/)) {
-      args = `tunnel --edge-ip-version auto --no-autoupdate --protocol http2 run --token ${ARGO_AUTH}`;
+      argsArray = ['tunnel', '--edge-ip-version', 'auto', '--no-autoupdate', '--protocol', 'http2', 'run', '--token', ARGO_AUTH];
     } else if (ARGO_AUTH.match(/TunnelSecret/)) {
-      args = `tunnel --edge-ip-version auto --config ${FILE_PATH}/tunnel.yml run`;
+      argsArray = ['tunnel', '--edge-ip-version', 'auto', '--config', `${FILE_PATH}/tunnel.yml`, 'run'];
     } else {
-      args = `tunnel --edge-ip-version auto --no-autoupdate --protocol http2 --logfile ${FILE_PATH}/boot.log --loglevel info --url http://localhost:${ARGO_PORT}`;
+      argsArray = ['tunnel', '--edge-ip-version', 'auto', '--no-autoupdate', '--protocol', 'http2', '--logfile', `${FILE_PATH}/boot.log`, '--loglevel', 'info', '--url', `http://localhost:${ARGO_PORT}`];
     }
 
     try {
-      await exec(`nohup ${botPath} ${args} >/dev/null 2>&1 &`);
+      const botProcess = require('child_process').spawn(botPath, argsArray, {
+        stdio: 'inherit',
+        detached: true
+      });
+      botProcess.unref();
       console.log(`${botName} is running`);
       await new Promise((resolve) => setTimeout(resolve, 2000));
     } catch (error) {
