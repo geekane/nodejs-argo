@@ -291,6 +291,9 @@ function argoType() {
 }
 
 // 获取临时隧道domain
+let extractRetryCount = 0;
+const MAX_EXTRACT_RETRIES = 5;
+
 async function extractDomains() {
   let argoDomain;
 
@@ -314,9 +317,15 @@ async function extractDomains() {
       if (argoDomains.length > 0) {
         argoDomain = argoDomains[0];
         console.log('ArgoDomain:', argoDomain);
+        extractRetryCount = 0; // 重置计数
         await generateLinks(argoDomain);
       } else {
-        console.log('ArgoDomain not found, re-running bot to obtain ArgoDomain');
+        if (extractRetryCount >= MAX_EXTRACT_RETRIES) {
+          console.error(`ArgoDomain not found after ${MAX_EXTRACT_RETRIES} retries. Stopping execution to prevent OOM crash.`);
+          return;
+        }
+        extractRetryCount++;
+        console.log(`ArgoDomain not found, re-running bot to obtain ArgoDomain (Retry ${extractRetryCount}/${MAX_EXTRACT_RETRIES})`);
         fs.unlinkSync(path.join(FILE_PATH, 'boot.log'));
         async function killBotProcess() {
           try {
