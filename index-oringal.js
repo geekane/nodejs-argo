@@ -226,7 +226,7 @@ async function downloadFilesAndRun() {
   if (fs.existsSync(botPath)) {
     let args;
 
-    if (ARGO_AUTH.match(/^[A-Z0-9a-z=]{120,250}$/)) {
+    if (ARGO_AUTH.match(/^[A-Z0-9a-z=_-]{120,250}$/)) {
       args = `tunnel --edge-ip-version auto --no-autoupdate --protocol http2 run --token ${ARGO_AUTH}`;
     } else if (ARGO_AUTH.match(/TunnelSecret/)) {
       args = `tunnel --edge-ip-version auto --config ${FILE_PATH}/tunnel.yml run`;
