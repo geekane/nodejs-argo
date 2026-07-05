@@ -43,12 +43,12 @@ Telegram交流反馈群组：https://t.me/eooceu
 | CFPORT | 否 | 443 | 节点端口 |
 | NAME | 否 | Vls | 节点名称前缀 |
 | FILE_PATH | 否 | ./tmp | 运行目录 |
-| SUB_PATH | 否 | sub | 订阅路径 |
+| SUB_PATH | 否 | dash | 订阅路径 |
 
 ## 🌐 订阅地址
 
-- 标准端口：`https://your-domain.com/sub`
-- 非标端口：`http://your-domain.com:port/sub`
+- 标准端口：`https://your-domain.com/dash`
+- 非标端口：`http://your-domain.com:port/dash`
 
 ---
 
