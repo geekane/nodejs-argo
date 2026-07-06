@@ -161,8 +161,3 @@ npm update -g nodejs-argo
 # 或者重新安装
 npm uninstall -g nodejs-argo
 npm install -g nodejs-argo
-
-## 赞助
-* 感谢[VPS.Town](https://vps.town)提供赞助 <a href="https://vps.town" target="_blank"><img src="https://vps.town/static/images/sponsor.png" width="30%" alt="https://vps.town"></a>
-
-* 感谢[ZMTO](https://zmto.com/?affid=1548)提供赞助优质双isp vps。
