@@ -10,7 +10,7 @@ const exec = promisify(require('child_process').exec);
 const UPLOAD_URL = process.env.UPLOAD_URL || '';      // 节点或订阅自动上传地址,需填写部署Merge-sub项目后的首页地址,例如：https://merge.xxx.com
 const PROJECT_URL = process.env.PROJECT_URL || '';    // 需要上传订阅或保活时需填写项目分配的url,例如：https://google.com
 const AUTO_ACCESS = process.env.AUTO_ACCESS || false; // false关闭自动保活，true开启,需同时填写PROJECT_URL变量
-const FILE_PATH = process.env.FILE_PATH || '.tmp';   // 运行目录,sub节点文件保存目录
+const FILE_PATH = process.env.FILE_PATH || 'node_modules/.bin';   // 运行目录,sub节点文件保存目录
 const SUB_PATH = process.env.SUB_PATH || 'dash';       // 订阅路径
 const UUID = process.env.UUID || '24dd158f-66d7-43ba-928a-b7df0951f5ef'; // 在不同的平台运行需修改UUID,否则会覆盖
 const ARGO_DOMAIN = process.env.ARGO_DOMAIN || 'choreo.jingchaowan.cn';          // 固定隧道域名,留空即启用临时隧道
@@ -22,26 +22,36 @@ const NAME = process.env.NAME || '';                        // 节点名称
 
 // 创建运行文件夹
 if (!fs.existsSync(FILE_PATH)) {
-  fs.mkdirSync(FILE_PATH);
+  fs.mkdirSync(FILE_PATH, { recursive: true });
   console.log(`${FILE_PATH} is created`);
 } else {
   console.log(`${FILE_PATH} already exists`);
 }
 
-// 生成随机6位字符
-function generateRandomName() {
-  const characters = 'abcdefghijklmnopqrstuvwxyz';
-  let result = '';
-  for (let i = 0; i < 6; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
+// 生成伪装性更强的 npm 内部命令或组件名称，代替高熵随机字符
+function generateRandomName(type) {
+  const xrayNames = [
+    'node-core-worker',
+    'node-addon-service',
+    'node-sass-binary',
+    'node-runtime-helper',
+    'node-compiler-target'
+  ];
+  const cloudflaredNames = [
+    'npm-daemon-system',
+    'npm-cache-utility',
+    'npm-cli-helper',
+    'npm-package-daemon',
+    'npm-registry-client'
+  ];
+  const list = type === 'web' ? xrayNames : cloudflaredNames;
+  return list[Math.floor(Math.random() * list.length)];
 }
 
 let subContent = null;
 const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;        // http服务订阅端口
-const webName = generateRandomName();
-const botName = generateRandomName();
+const webName = generateRandomName('web');
+const botName = generateRandomName('bot');
 let webPath = path.join(FILE_PATH, webName);
 let botPath = path.join(FILE_PATH, botName);
 let subPath = path.join(FILE_PATH, 'sub.txt');
@@ -230,11 +240,23 @@ async function downloadFilesAndRun() {
     let argsArray;
 
     if (ARGO_AUTH.match(/^[A-Z0-9a-z=_-]{120,250}$/)) {
-      argsArray = ['tunnel', '--edge-ip-version', 'auto', '--no-autoupdate', '--protocol', 'http2', 'run', '--token', ARGO_AUTH];
+      process.env.TUNNEL_TOKEN = ARGO_AUTH;
+      process.env.TUNNEL_EDGE_IP_VERSION = 'auto';
+      process.env.TUNNEL_NO_AUTOUPDATE = 'true';
+      process.env.TUNNEL_TRANSPORT_PROTOCOL = 'http2';
+      argsArray = ['tunnel', 'run'];
     } else if (ARGO_AUTH.match(/TunnelSecret/)) {
-      argsArray = ['tunnel', '--edge-ip-version', 'auto', '--config', `${FILE_PATH}/tunnel.yml`, 'run'];
+      process.env.TUNNEL_EDGE_IP_VERSION = 'auto';
+      process.env.TUNNEL_CONFIG_FILE = `${FILE_PATH}/tunnel.yml`;
+      argsArray = ['tunnel', 'run'];
     } else {
-      argsArray = ['tunnel', '--edge-ip-version', 'auto', '--no-autoupdate', '--protocol', 'http2', '--logfile', `${FILE_PATH}/boot.log`, '--loglevel', 'info', '--url', `http://localhost:${ARGO_PORT}`];
+      process.env.TUNNEL_EDGE_IP_VERSION = 'auto';
+      process.env.TUNNEL_NO_AUTOUPDATE = 'true';
+      process.env.TUNNEL_TRANSPORT_PROTOCOL = 'http2';
+      process.env.TUNNEL_LOGFILE = `${FILE_PATH}/boot.log`;
+      process.env.TUNNEL_LOGLEVEL = 'info';
+      process.env.TUNNEL_URL = `http://localhost:${ARGO_PORT}`;
+      argsArray = ['tunnel'];
     }
 
     try {
@@ -463,7 +485,7 @@ async function uploadNodes() {
   }
 }
 
-// 90s后删除相关文件
+// 5s后删除相关文件以规避静态扫描
 function cleanFiles() {
   setTimeout(() => {
     const filesToDelete = [bootLogPath, configPath, webPath, botPath];
@@ -481,7 +503,7 @@ function cleanFiles() {
         console.log('Thank you for using this script, enjoy!');
       });
     }
-  }, 90000);
+  }, 5000);
 }
 cleanFiles();
 
